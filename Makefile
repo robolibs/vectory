@@ -14,7 +14,7 @@ $(info ------------------------------------------)
 $(info Project: $(PROJECT_NAME) v$(PROJECT_VERSION))
 $(info ------------------------------------------)
 
-.PHONY: build b compile c run r test t check fmt bench clean help h
+.PHONY: build b compile c run r test t check fmt bench clean help h test-python c-demo
 
 build:
 	@$(CARGO) build --lib --examples
@@ -37,6 +37,12 @@ test:
 
 t: test
 
+test-python:
+	@$(CARGO) check --features python
+
+c-demo:
+	@$(MAKE) -C examples/c_abi run
+
 check:
 	@$(CARGO) check --all-targets
 
@@ -44,7 +50,7 @@ fmt:
 	@$(CARGO) fmt --all
 
 bench:
-	@$(CARGO) bench --bench core_workloads -- --quick
+	@$(CARGO) bench
 
 clean:
 	@$(CARGO) clean
@@ -58,14 +64,16 @@ help:
 	@echo "  compile      Clean and rebuild"
 	@echo "  run          Run a development example (EXAMPLE=main by default)"
 	@echo "  test         Run all tests"
+	@echo "  test-python  Run tests with Python bindings enabled"
 	@echo "  check        Run cargo check on all targets"
 	@echo "  fmt          Format the workspace"
-	@echo "  bench        Run the custom benchmark target"
+	@echo "  bench        Run benchmarks"
+	@echo "  c-demo       Build and run the C ABI example"
 	@echo "  clean        Remove Cargo build artifacts"
 	@echo
 	@echo "Examples:"
 	@echo "  make run"
-	@echo "  make run EXAMPLE=simple_graph"
+	@echo "  make run EXAMPLE=main"
 	@echo
 
 h: help
