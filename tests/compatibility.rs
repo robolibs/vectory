@@ -1,18 +1,16 @@
 use std::collections::HashMap;
 
 use concord::Geo;
-use datapod::{Point, Polygon, Segment, Vector as PodVector};
+use datapod::{Point, Segment};
 use vectory::{Crs, FeatureCollection, Geometry, Heading, Vector};
 
-fn square(size: f64) -> Polygon {
-    Polygon {
-        vertices: PodVector::from(vec![
-            Point::new(0.0, 0.0, 0.0),
-            Point::new(size, 0.0, 0.0),
-            Point::new(size, size, 0.0),
-            Point::new(0.0, size, 0.0),
-        ]),
-    }
+fn square(size: f64) -> Vec<Point> {
+    vec![
+        Point::new(0.0, 0.0, 0.0),
+        Point::new(size, 0.0, 0.0),
+        Point::new(size, size, 0.0),
+        Point::new(0.0, size, 0.0),
+    ]
 }
 
 #[test]

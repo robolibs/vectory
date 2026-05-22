@@ -1,13 +1,9 @@
 use std::{collections::HashMap, fs, path::Path};
 
 use concord::{Enu, Geo, Wgs, to_enu};
-use datapod::Vector;
 use serde_json::{Map, Value};
 
-use crate::{
-    Crs, Error, Feature, FeatureCollection, Geometry, Heading, Path3, Point3, Polygon3, Result,
-    Segment3,
-};
+use crate::{Crs, Error, Feature, FeatureCollection, Geometry, Heading, Point3, Result, Segment3};
 
 pub fn read(path: impl AsRef<Path>) -> Result<FeatureCollection> {
     let path = path.as_ref();
@@ -184,7 +180,7 @@ fn parse_geometry_value(value: &Value, datum: Geo, crs: Crs) -> Result<Vec<Geome
             let Some(rings) = object.get("coordinates").and_then(Value::as_array) else {
                 return Ok(Vec::new());
             };
-            Ok(vec![Geometry::Polygon(parse_polygon(rings, datum, crs)?)])
+            Ok(vec![Geometry::polygon(parse_polygon(rings, datum, crs)?)])
         }
         "MultiPoint" => {
             let Some(points) = object.get("coordinates").and_then(Value::as_array) else {
@@ -226,7 +222,7 @@ fn parse_geometry_value(value: &Value, datum: Geo, crs: Crs) -> Result<Vec<Geome
                         .as_array()
                         .ok_or_else(|| Error::InvalidGeoJson("Invalid polygon coordinates".into()))
                         .and_then(|rings| parse_polygon(rings, datum, crs))
-                        .map(Geometry::Polygon)
+                        .map(Geometry::polygon)
                 })
                 .collect()
         }
@@ -270,20 +266,15 @@ fn parse_line_string(coords: &[Value], datum: Geo, crs: Crs) -> Result<Geometry>
     if points.len() == 2 {
         Ok(Geometry::Segment(Segment3::new(points[0], points[1])))
     } else {
-        Ok(Geometry::Path(Path3 {
-            points: Vector::from(points),
-        }))
+        Ok(Geometry::path(points))
     }
 }
 
-fn parse_polygon(rings: &[Value], datum: Geo, crs: Crs) -> Result<Polygon3> {
+fn parse_polygon(rings: &[Value], datum: Geo, crs: Crs) -> Result<Vec<Point3>> {
     let Some(exterior) = rings.first().and_then(Value::as_array) else {
-        return Ok(Polygon3::default());
+        return Ok(Vec::new());
     };
-
-    Ok(Polygon3 {
-        vertices: Vector::from(parse_points(exterior, datum, crs)?),
-    })
+    parse_points(exterior, datum, crs)
 }
 
 fn parse_points(coords: &[Value], datum: Geo, crs: Crs) -> Result<Vec<Point3>> {

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use concord::{Geo, Wgs, to_enu, to_wgs_from_enu};
-use datapod::{Point, Polygon, Segment, Vector as PodVector};
+use datapod::{Point, Polygon, Segment};
 use vectory::{Feature, FeatureCollection, Geometry, Heading};
 
 #[test]
@@ -24,18 +24,17 @@ fn geometry_accepts_core_datapod_types() {
     let segment = Segment::new(Point::new(1.0, 2.0, 3.0), Point::new(4.0, 5.0, 6.0));
     assert!(matches!(Geometry::from(segment), Geometry::Segment(_)));
 
-    let path = datapod::Linestring {
-        points: PodVector::from(vec![Point::new(1.0, 2.0, 0.0), Point::new(2.0, 3.0, 0.0)]),
-    };
+    let path = datapod::Linestring::new(vec![
+        Point::new(1.0, 2.0, 0.0),
+        Point::new(2.0, 3.0, 0.0),
+    ]);
     assert!(matches!(Geometry::from(path), Geometry::Path(_)));
 
-    let polygon = Polygon {
-        vertices: PodVector::from(vec![
-            Point::new(0.0, 0.0, 0.0),
-            Point::new(1.0, 0.0, 0.0),
-            Point::new(1.0, 1.0, 0.0),
-        ]),
-    };
+    let polygon = Polygon::new(vec![
+        Point::new(0.0, 0.0, 0.0),
+        Point::new(1.0, 0.0, 0.0),
+        Point::new(1.0, 1.0, 0.0),
+    ]);
     assert!(matches!(Geometry::from(polygon), Geometry::Polygon(_)));
 }
 

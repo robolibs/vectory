@@ -26,7 +26,9 @@ impl Element {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Vector {
-    field_boundary: Polygon3,
+    /// Field-boundary vertex buffer (heap). The Pod header is built on
+    /// demand when shipping over the wire.
+    field_boundary: Vec<Point3>,
     field_properties: HashMap<String, String>,
     elements: Vec<Element>,
     datum: Geo,
@@ -36,7 +38,7 @@ pub struct Vector {
 }
 
 impl Vector {
-    pub fn new(field_boundary: Polygon3, datum: Geo, heading: Heading, crs: Crs) -> Self {
+    pub fn new(field_boundary: Vec<Point3>, datum: Geo, heading: Heading, crs: Crs) -> Self {
         Self {
             field_boundary,
             field_properties: HashMap::new(),
@@ -59,9 +61,9 @@ impl Vector {
         let mut field_polygon = None;
 
         for feature in &collection.features {
-            if let Geometry::Polygon(polygon) = &feature.geometry {
+            if let Geometry::Polygon(poly) = &feature.geometry {
                 if feature.properties.get("type").is_some_and(|value| value == "field") {
-                    field_polygon = Some((polygon.clone(), feature.properties.clone()));
+                    field_polygon = Some((poly.vertices.clone(), feature.properties.clone()));
                     break;
                 }
             }
@@ -69,8 +71,8 @@ impl Vector {
 
         if field_polygon.is_none() {
             for feature in &collection.features {
-                if let Geometry::Polygon(polygon) = &feature.geometry {
-                    field_polygon = Some((polygon.clone(), feature.properties.clone()));
+                if let Geometry::Polygon(poly) = &feature.geometry {
+                    field_polygon = Some((poly.vertices.clone(), feature.properties.clone()));
                     break;
                 }
             }
@@ -115,7 +117,7 @@ impl Vector {
         let mut field_properties = self.field_properties.clone();
         field_properties.insert("type".into(), "field".into());
         collection.features.push(Feature {
-            geometry: Geometry::Polygon(self.field_boundary.clone()),
+            geometry: Geometry::polygon(self.field_boundary.clone()),
             properties: field_properties,
         });
 
@@ -134,16 +136,16 @@ impl Vector {
         self.to_file(path, output_crs)
     }
 
-    pub fn field_boundary(&self) -> &Polygon3 {
+    pub fn field_boundary(&self) -> &[Point3] {
         &self.field_boundary
     }
 
     #[allow(non_snake_case)]
-    pub fn getFieldBoundary(&self) -> &Polygon3 {
+    pub fn getFieldBoundary(&self) -> &[Point3] {
         self.field_boundary()
     }
 
-    pub fn set_field_boundary(&mut self, boundary: Polygon3) {
+    pub fn set_field_boundary(&mut self, boundary: Vec<Point3>) {
         self.field_boundary = boundary;
     }
 
@@ -241,20 +243,20 @@ impl Vector {
 
     pub fn add_path(
         &mut self,
-        path: Path3,
+        path: Vec<Point3>,
         kind: impl Into<String>,
         properties: HashMap<String, String>,
     ) {
-        self.add_element(Geometry::Path(path), kind, properties);
+        self.add_element(Geometry::path(path), kind, properties);
     }
 
     pub fn add_polygon(
         &mut self,
-        polygon: Polygon3,
+        polygon: Vec<Point3>,
         kind: impl Into<String>,
         properties: HashMap<String, String>,
     ) {
-        self.add_element(Geometry::Polygon(polygon), kind, properties);
+        self.add_element(Geometry::polygon(polygon), kind, properties);
     }
 
     pub fn elements_by_type(&self, kind: &str) -> Vec<&Element> {

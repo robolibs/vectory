@@ -88,11 +88,11 @@ fn geometry_to_json(geometry: &Geometry, origin: concord::Geo, crs: Crs) -> Valu
         }),
         Geometry::Path(path) => json!({
             "type": "LineString",
-            "coordinates": path.points.iter().map(|point| point_to_coords(point, origin, crs)).collect::<Vec<_>>(),
+            "coordinates": path.points.iter().map(|p| point_to_coords(p, origin, crs)).collect::<Vec<_>>(),
         }),
-        Geometry::Polygon(polygon) => json!({
+        Geometry::Polygon(poly) => json!({
             "type": "Polygon",
-            "coordinates": [polygon.vertices.iter().map(|point| point_to_coords(point, origin, crs)).collect::<Vec<_>>()],
+            "coordinates": [poly.vertices.iter().map(|p| point_to_coords(p, origin, crs)).collect::<Vec<_>>()],
         }),
     }
 }

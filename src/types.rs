@@ -31,12 +31,27 @@ impl Crs {
     }
 }
 
+/// Geometry variants. Each owns its data inline — `Path` wraps a
+/// `Linestring` (which owns its `Vec<Point>`), `Polygon` wraps a
+/// `datapod::Polygon` (likewise). `Point` and `Segment` are fixed-Pod.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Geometry {
     Point(Point3),
     Segment(Segment3),
     Path(Path3),
     Polygon(Polygon3),
+}
+
+impl Geometry {
+    /// Construct a `Path` variant from a vertex buffer.
+    pub fn path(vertices: Vec<Point3>) -> Self {
+        Self::Path(Path3::new(vertices))
+    }
+
+    /// Construct a `Polygon` variant from a vertex buffer.
+    pub fn polygon(vertices: Vec<Point3>) -> Self {
+        Self::Polygon(Polygon3::new(vertices))
+    }
 }
 
 impl From<Point3> for Geometry {

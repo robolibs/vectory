@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use concord::{Geo, Wgs, to_enu};
-use datapod::{Point, Polygon, Segment, Vector as PodVector};
+use datapod::{Point, Polygon, Segment};
 use vectory::{Crs, Feature, FeatureCollection, Geometry, Heading, read, write};
 
 #[test]
@@ -21,34 +21,30 @@ fn round_trip_conversion_keeps_collection_shape() {
             Point::new(end.east(), end.north(), end.up()),
         )
     };
-    let path = datapod::Linestring {
-        points: PodVector::from(
-            [Wgs::new(52.1, 5.1, 0.0), Wgs::new(52.2, 5.2, 0.0), Wgs::new(52.3, 5.3, 0.0)]
-                .into_iter()
-                .map(|wgs| {
-                    let enu = to_enu(datum, wgs);
-                    Point::new(enu.east(), enu.north(), enu.up())
-                })
-                .collect::<Vec<_>>(),
-        ),
-    };
-    let polygon = Polygon {
-        vertices: PodVector::from(
-            [
-                Wgs::new(52.1, 5.1, 0.0),
-                Wgs::new(52.2, 5.1, 0.0),
-                Wgs::new(52.2, 5.2, 0.0),
-                Wgs::new(52.1, 5.2, 0.0),
-                Wgs::new(52.1, 5.1, 0.0),
-            ]
+    let path = datapod::Linestring::new(
+        [Wgs::new(52.1, 5.1, 0.0), Wgs::new(52.2, 5.2, 0.0), Wgs::new(52.3, 5.3, 0.0)]
             .into_iter()
             .map(|wgs| {
                 let enu = to_enu(datum, wgs);
                 Point::new(enu.east(), enu.north(), enu.up())
             })
             .collect::<Vec<_>>(),
-        ),
-    };
+    );
+    let polygon = Polygon::new(
+        [
+            Wgs::new(52.1, 5.1, 0.0),
+            Wgs::new(52.2, 5.1, 0.0),
+            Wgs::new(52.2, 5.2, 0.0),
+            Wgs::new(52.1, 5.2, 0.0),
+            Wgs::new(52.1, 5.1, 0.0),
+        ]
+        .into_iter()
+        .map(|wgs| {
+            let enu = to_enu(datum, wgs);
+            Point::new(enu.east(), enu.north(), enu.up())
+        })
+        .collect::<Vec<_>>(),
+    );
 
     let mut collection = FeatureCollection::new(datum, heading);
     collection

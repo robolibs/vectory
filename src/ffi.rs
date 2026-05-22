@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use std::ffi::{CStr, CString, c_char};
 use std::ptr;
 
-use datapod::{Euler, Point, Polygon, Segment, Vector as PodVector};
+use datapod::{Euler, Point, Segment};
 
-use crate::{Crs, Feature, FeatureCollection, Geometry, Path3, Vector};
+use crate::{Crs, Feature, FeatureCollection, Geometry, Vector};
 
 thread_local! {
     static LAST_ERROR: RefCell<Option<CString>> = const { RefCell::new(None) };
@@ -523,9 +523,7 @@ pub extern "C" fn vectory_feature_collection_add_path_feature(
         let points = read_points(points)?;
         let properties = feature_properties_from_c(None, property_key, property_value)?;
         handle.inner.features.push(Feature::new(
-            Path3 {
-                points: PodVector::from(points),
-            },
+            crate::Geometry::path(points),
             properties,
         ));
         Ok(())
@@ -546,9 +544,7 @@ pub extern "C" fn vectory_feature_collection_add_polygon_feature(
         let points = read_points(points)?;
         let properties = feature_properties_from_c(None, property_key, property_value)?;
         handle.inner.features.push(Feature::new(
-            Polygon {
-                vertices: PodVector::from(points),
-            },
+            crate::Geometry::polygon(points),
             properties,
         ));
         Ok(())
@@ -654,7 +650,7 @@ pub extern "C" fn vectory_feature_collection_feature_vertex_count(
         .and_then(|handle| handle.inner.features.get(index))
         .map(|feature| match &feature.geometry {
             Geometry::Path(path) => path.points.len(),
-            Geometry::Polygon(polygon) => polygon.vertices.len(),
+            Geometry::Polygon(poly) => poly.vertices.len(),
             _ => 0,
         })
         .unwrap_or(0)
@@ -679,7 +675,7 @@ pub extern "C" fn vectory_feature_collection_feature_vertex_at(
                 .get(vertex_index)
                 .copied()
                 .ok_or_else(|| crate::Error::InvalidGeoJson("vertex index out of range".into())),
-            Geometry::Polygon(polygon) => polygon
+            Geometry::Polygon(poly) => poly
                 .vertices
                 .get(vertex_index)
                 .copied()
@@ -705,9 +701,7 @@ pub extern "C" fn vectory_vector_new(
     match read_points(boundary) {
         Ok(points) => {
             let inner = Vector::new(
-                Polygon {
-                    vertices: PodVector::from(points),
-                },
+                points,
                 datum.into(),
                 heading.into(),
                 crs_from_c(crs),
@@ -865,7 +859,7 @@ pub extern "C" fn vectory_vector_set_crs(
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_field_boundary_vertex_count(handle: *const VectoryVectorHandle) -> usize {
     vector_from_ptr(handle)
-        .map(|handle| handle.inner.field_boundary().vertices.len())
+        .map(|handle| handle.inner.field_boundary().len())
         .unwrap_or(0)
 }
 
@@ -879,7 +873,6 @@ pub extern "C" fn vectory_vector_field_boundary_vertex_at(
         handle
             .inner
             .field_boundary()
-            .vertices
             .get(index)
             .copied()
             .ok_or_else(|| crate::Error::InvalidGeoJson("field boundary index out of range".into()))
@@ -971,9 +964,7 @@ pub extern "C" fn vectory_vector_add_path(
     match vector_from_ptr_mut(handle).and_then(|handle| {
         let kind = if kind.is_null() { "" } else { cstr_to_str(kind, "kind")? };
         handle.inner.add_path(
-            Path3 {
-                points: PodVector::from(read_points(points)?),
-            },
+            read_points(points)?,
             kind,
             HashMap::new(),
         );
@@ -993,9 +984,7 @@ pub extern "C" fn vectory_vector_add_polygon(
     match vector_from_ptr_mut(handle).and_then(|handle| {
         let kind = if kind.is_null() { "" } else { cstr_to_str(kind, "kind")? };
         handle.inner.add_polygon(
-            Polygon {
-                vertices: PodVector::from(read_points(points)?),
-            },
+            read_points(points)?,
             kind,
             HashMap::new(),
         );
