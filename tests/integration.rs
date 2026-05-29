@@ -4,6 +4,13 @@ use concord::{Geo, Wgs, to_enu};
 use datapod::{Point, Polygon, Segment};
 use vectory::{Crs, Feature, FeatureCollection, Geometry, Heading, read, write};
 
+fn field4_fixture() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("field4.geojson")
+}
+
 #[test]
 fn round_trip_conversion_keeps_collection_shape() {
     let datum = Geo::new(52.0, 5.0, 0.0);
@@ -22,13 +29,17 @@ fn round_trip_conversion_keeps_collection_shape() {
         )
     };
     let path = datapod::Linestring::new(
-        [Wgs::new(52.1, 5.1, 0.0), Wgs::new(52.2, 5.2, 0.0), Wgs::new(52.3, 5.3, 0.0)]
-            .into_iter()
-            .map(|wgs| {
-                let enu = to_enu(datum, wgs);
-                Point::new(enu.east(), enu.north(), enu.up())
-            })
-            .collect::<Vec<_>>(),
+        [
+            Wgs::new(52.1, 5.1, 0.0),
+            Wgs::new(52.2, 5.2, 0.0),
+            Wgs::new(52.3, 5.3, 0.0),
+        ]
+        .into_iter()
+        .map(|wgs| {
+            let enu = to_enu(datum, wgs);
+            Point::new(enu.east(), enu.north(), enu.up())
+        })
+        .collect::<Vec<_>>(),
     );
     let polygon = Polygon::new(
         [
@@ -47,15 +58,18 @@ fn round_trip_conversion_keeps_collection_shape() {
     );
 
     let mut collection = FeatureCollection::new(datum, heading);
-    collection
-        .features
-        .push(Feature::new(point, HashMap::from([(String::from("name"), String::from("test_point"))])));
-    collection
-        .features
-        .push(Feature::new(line, HashMap::from([(String::from("name"), String::from("test_line"))])));
-    collection
-        .features
-        .push(Feature::new(path, HashMap::from([(String::from("name"), String::from("test_path"))])));
+    collection.features.push(Feature::new(
+        point,
+        HashMap::from([(String::from("name"), String::from("test_point"))]),
+    ));
+    collection.features.push(Feature::new(
+        line,
+        HashMap::from([(String::from("name"), String::from("test_line"))]),
+    ));
+    collection.features.push(Feature::new(
+        path,
+        HashMap::from([(String::from("name"), String::from("test_path"))]),
+    ));
     collection.features.push(Feature::new(
         polygon,
         HashMap::from([(String::from("name"), String::from("test_polygon"))]),
@@ -74,21 +88,22 @@ fn round_trip_conversion_keeps_collection_shape() {
 
 #[test]
 fn read_existing_vectkit_fixture() {
-    let path = "/home/bresilla/data/code/robolibs/vectkit/misc/field4.geojson";
-    let collection = read(path).unwrap();
+    let collection = read(field4_fixture()).unwrap();
 
     assert!((collection.datum.latitude - 51.9877).abs() < 1e-6);
     assert!((collection.datum.longitude - 5.65).abs() < 1e-6);
     assert_eq!(collection.datum.altitude, 0.0);
     assert_eq!(collection.heading.yaw, 0.0);
     assert_eq!(collection.features.len(), 1);
-    assert!(matches!(collection.features[0].geometry, Geometry::Polygon(_)));
+    assert!(matches!(
+        collection.features[0].geometry,
+        Geometry::Polygon(_)
+    ));
 }
 
 #[test]
 fn modify_and_save_fixture() {
-    let path = "/home/bresilla/data/code/robolibs/vectkit/misc/field4.geojson";
-    let mut collection = read(path).unwrap();
+    let mut collection = read(field4_fixture()).unwrap();
     collection.datum.latitude += 5.1;
 
     let output = std::env::temp_dir().join("vectory_modified_test.geojson");
