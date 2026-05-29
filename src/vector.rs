@@ -3,8 +3,7 @@ use std::{collections::HashMap, path::Path};
 use concord::Geo;
 
 use crate::{
-    Crs, Feature, FeatureCollection, Geometry, Heading, Path3, Point3, Polygon3, Result, Segment3,
-    read, write,
+    Crs, Feature, FeatureCollection, Geometry, Heading, Point3, Result, Segment3, read, write,
 };
 
 #[derive(Debug, Clone, PartialEq)]
