@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
-use datapod::{Point, Polygon, Segment, Vector as PodVector};
+use datapod::{Point, Segment};
 use pyo3::exceptions::{PyIndexError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyModule};
 use pyo3::wrap_pyfunction;
 
-use crate::{Crs, Feature, FeatureCollection, Geometry, Heading, Path3, Vector, read, read_json_str, to_json_string, write};
+use crate::{
+    Crs, Feature, FeatureCollection, Geometry, Heading, Vector, read, read_json_str,
+    to_json_string, write,
+};
 
 fn py_runtime_error(err: crate::Error) -> PyErr {
     PyRuntimeError::new_err(err.to_string())
@@ -57,7 +60,12 @@ fn geometry_dict<'py>(py: Python<'py>, geometry: &Geometry) -> PyResult<Bound<'p
         }
         Geometry::Path(path) => {
             dict.set_item("kind", "path")?;
-            let points = path.points.iter().copied().map(point_tuple).collect::<Vec<_>>();
+            let points = path
+                .points
+                .iter()
+                .copied()
+                .map(point_tuple)
+                .collect::<Vec<_>>();
             dict.set_item("points", points)?;
         }
         Geometry::Polygon(polygon) => {
@@ -192,9 +200,10 @@ impl PyFeatureCollection {
         point: (f64, f64, f64),
         properties: Option<HashMap<String, String>>,
     ) {
-        self.inner
-            .features
-            .push(Feature::new(parse_point(point), properties.unwrap_or_default()));
+        self.inner.features.push(Feature::new(
+            parse_point(point),
+            properties.unwrap_or_default(),
+        ));
     }
 
     #[pyo3(signature = (start, end, properties=None))]
@@ -217,9 +226,7 @@ impl PyFeatureCollection {
         properties: Option<HashMap<String, String>>,
     ) {
         self.inner.features.push(Feature::new(
-            Path3 {
-                points: PodVector::from(parse_points(points)),
-            },
+            Geometry::path(parse_points(points)),
             properties.unwrap_or_default(),
         ));
     }
@@ -231,9 +238,7 @@ impl PyFeatureCollection {
         properties: Option<HashMap<String, String>>,
     ) {
         self.inner.features.push(Feature::new(
-            Polygon {
-                vertices: PodVector::from(parse_points(points)),
-            },
+            Geometry::polygon(parse_points(points)),
             properties.unwrap_or_default(),
         ));
     }
@@ -273,9 +278,7 @@ impl PyVector {
     ) -> PyResult<Self> {
         Ok(Self {
             inner: Vector::new(
-                Polygon {
-                    vertices: PodVector::from(parse_points(field_boundary)),
-                },
+                parse_points(field_boundary),
                 datapod::Geo::new(datum.0, datum.1, datum.2),
                 Heading::new(heading.0, heading.1, heading.2),
                 parse_crs(crs)?,
@@ -292,13 +295,14 @@ impl PyVector {
 
     #[pyo3(signature = (path, crs="WGS"))]
     fn to_file(&self, path: &str, crs: &str) -> PyResult<()> {
-        self.inner.to_file(path, parse_crs(crs)?).map_err(py_runtime_error)
+        self.inner
+            .to_file(path, parse_crs(crs)?)
+            .map_err(py_runtime_error)
     }
 
     fn field_boundary(&self) -> Vec<(f64, f64, f64)> {
         self.inner
             .field_boundary()
-            .vertices
             .iter()
             .copied()
             .map(point_tuple)
@@ -409,9 +413,7 @@ impl PyVector {
         properties: Option<HashMap<String, String>>,
     ) {
         self.inner.add_path(
-            Path3 {
-                points: PodVector::from(parse_points(points)),
-            },
+            parse_points(points),
             kind.unwrap_or("path"),
             properties.unwrap_or_default(),
         );
@@ -425,9 +427,7 @@ impl PyVector {
         properties: Option<HashMap<String, String>>,
     ) {
         self.inner.add_polygon(
-            Polygon {
-                vertices: PodVector::from(parse_points(points)),
-            },
+            parse_points(points),
             kind.unwrap_or("polygon"),
             properties.unwrap_or_default(),
         );

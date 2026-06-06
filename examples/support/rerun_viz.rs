@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 use std::error::Error;
 
 use concord::{Geo, to_wgs_from_enu};

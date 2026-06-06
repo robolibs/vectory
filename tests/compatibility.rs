@@ -15,7 +15,12 @@ fn square(size: f64) -> Vec<Point> {
 
 #[test]
 fn cpp_style_vector_aliases_work() {
-    let mut vector = Vector::new(square(10.0), Geo::new(52.0, 5.0, 0.0), Heading::default(), Crs::Enu);
+    let mut vector = Vector::new(
+        square(10.0),
+        Geo::new(52.0, 5.0, 0.0),
+        Heading::default(),
+        Crs::Enu,
+    );
     vector.add_point(Point::new(1.0, 2.0, 3.0), "waypoint", HashMap::new());
     vector.add_line(
         Segment::new(Point::new(0.0, 0.0, 0.0), Point::new(1.0, 1.0, 1.0)),
@@ -27,7 +32,10 @@ fn cpp_style_vector_aliases_work() {
     assert!(vector.hasElements());
     assert_eq!(vector.getPoints().len(), 1);
     assert_eq!(vector.getLines().len(), 1);
-    assert!(matches!(vector.getElement(0).unwrap().geometry, Geometry::Point(_)));
+    assert!(matches!(
+        vector.getElement(0).unwrap().geometry,
+        Geometry::Point(_)
+    ));
     assert_eq!(vector.getElementsByType("waypoint").len(), 1);
 
     vector.setGlobalProperty("field_id", "F42");

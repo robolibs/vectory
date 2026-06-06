@@ -32,14 +32,14 @@ Add the crate to `Cargo.toml`:
 
 ```toml
 [dependencies]
-vectory = { path = "../vectory_rs" }
+vectory = { path = "../vectory" }
 ```
 
 Python bindings are optional:
 
 ```toml
 [dependencies]
-vectory = { path = "../vectory_rs", features = ["python"] }
+vectory = { path = "../vectory", features = ["python"] }
 ```
 
 ## Core Types
@@ -166,8 +166,8 @@ Important behavior inherited from `vectkit`:
 
 The crate exposes a C ABI and installs the public header:
 
-- header: [include/vectory.h](/home/bresilla/data/code/robolibs/vectory_rs/include/vectory.h)
-- implementation: [src/ffi.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/ffi.rs)
+- header: [include/vectory.h](include/vectory.h)
+- implementation: [src/ffi.rs](src/ffi.rs)
 
 The ABI covers:
 
@@ -178,7 +178,7 @@ The ABI covers:
 - element insertion and inspection
 - last-error retrieval
 
-A small C example is included in [examples/c_abi/demo.c](/home/bresilla/data/code/robolibs/vectory_rs/examples/c_abi/demo.c).
+A small C example is included in [examples/c_abi/demo.c](examples/c_abi/demo.c).
 
 ## Python Bindings
 
@@ -186,11 +186,11 @@ Python bindings are implemented with `pyo3` behind the `python` feature.
 
 Relevant files:
 
-- module implementation: [src/python.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/python.rs)
-- packaging config: [pyproject.toml](/home/bresilla/data/code/robolibs/vectory_rs/pyproject.toml)
+- module implementation: [src/python/mod.rs](src/python/mod.rs)
+- packaging config: [pyproject.toml](pyproject.toml)
 - example scripts:
-  - [examples/python_binding/basic.py](/home/bresilla/data/code/robolibs/vectory_rs/examples/python_binding/basic.py)
-  - [examples/python_binding/main.py](/home/bresilla/data/code/robolibs/vectory_rs/examples/python_binding/main.py)
+  - [examples/python_binding/basic.py](examples/python_binding/basic.py)
+  - [examples/python_binding/main.py](examples/python_binding/main.py)
 
 Build-time check:
 
@@ -242,14 +242,14 @@ on the machine.
 
 ## Project Layout
 
-- [src/lib.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/lib.rs): crate exports
-- [src/types.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/types.rs): core data model
-- [src/io/parse.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/io/parse.rs): GeoJSON parser
-- [src/io/write.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/io/write.rs): GeoJSON writer
-- [src/vector.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/vector.rs): field-oriented API
-- [src/ffi.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/ffi.rs): C ABI
-- [src/python.rs](/home/bresilla/data/code/robolibs/vectory_rs/src/python.rs): Python bindings
-- [PLAN.md](/home/bresilla/data/code/robolibs/vectory_rs/PLAN.md): original porting plan
+- [src/lib.rs](src/lib.rs): crate exports
+- [src/types.rs](src/types.rs): core data model
+- [src/io/parse.rs](src/io/parse.rs): GeoJSON parser
+- [src/io/write.rs](src/io/write.rs): GeoJSON writer
+- [src/vector.rs](src/vector.rs): field-oriented API
+- [src/ffi.rs](src/ffi.rs): C ABI
+- [src/python/mod.rs](src/python/mod.rs): Python bindings
+- [PLAN.md](PLAN.md): original porting plan
 
 ## Status
 

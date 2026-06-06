@@ -75,9 +75,18 @@ fn parser_supports_core_geometry_types() {
     let line_collection = read(line_path).unwrap();
     let polygon_collection = read(polygon_path).unwrap();
 
-    assert!(matches!(point_collection.features[0].geometry, Geometry::Point(_)));
-    assert!(matches!(line_collection.features[0].geometry, Geometry::Segment(_)));
-    assert!(matches!(polygon_collection.features[0].geometry, Geometry::Polygon(_)));
+    assert!(matches!(
+        point_collection.features[0].geometry,
+        Geometry::Point(_)
+    ));
+    assert!(matches!(
+        line_collection.features[0].geometry,
+        Geometry::Segment(_)
+    ));
+    assert!(matches!(
+        polygon_collection.features[0].geometry,
+        Geometry::Polygon(_)
+    ));
 }
 
 #[test]
@@ -109,14 +118,18 @@ fn parser_top_level_feature_and_bare_geometry_error_without_properties() {
         }"#,
     );
 
-    assert!(read(feature_path)
-        .unwrap_err()
-        .to_string()
-        .contains("missing top-level 'properties'"));
-    assert!(read(geometry_path)
-        .unwrap_err()
-        .to_string()
-        .contains("missing top-level 'properties'"));
+    assert!(
+        read(feature_path)
+            .unwrap_err()
+            .to_string()
+            .contains("missing top-level 'properties'")
+    );
+    assert!(
+        read(geometry_path)
+            .unwrap_err()
+            .to_string()
+            .contains("missing top-level 'properties'")
+    );
 }
 
 #[test]
@@ -148,9 +161,18 @@ fn parser_flattens_multi_geometries() {
     let collection = read(path).unwrap();
     assert_eq!(collection.global_properties["farm"], "alpha");
     assert_eq!(collection.features.len(), 4);
-    assert!(matches!(collection.features[0].geometry, Geometry::Point(_)));
-    assert!(matches!(collection.features[1].geometry, Geometry::Point(_)));
-    assert!(matches!(collection.features[2].geometry, Geometry::Segment(_)));
+    assert!(matches!(
+        collection.features[0].geometry,
+        Geometry::Point(_)
+    ));
+    assert!(matches!(
+        collection.features[1].geometry,
+        Geometry::Point(_)
+    ));
+    assert!(matches!(
+        collection.features[2].geometry,
+        Geometry::Segment(_)
+    ));
     assert!(matches!(collection.features[3].geometry, Geometry::Path(_)));
 }
 
@@ -181,7 +203,22 @@ fn parser_errors_on_missing_required_properties() {
         }"#,
     );
 
-    assert!(read(missing_crs).unwrap_err().to_string().contains("missing string 'crs'"));
-    assert!(read(missing_datum).unwrap_err().to_string().contains("missing array 'datum'"));
-    assert!(read(missing_heading).unwrap_err().to_string().contains("missing numeric 'heading'"));
+    assert!(
+        read(missing_crs)
+            .unwrap_err()
+            .to_string()
+            .contains("missing string 'crs'")
+    );
+    assert!(
+        read(missing_datum)
+            .unwrap_err()
+            .to_string()
+            .contains("missing array 'datum'")
+    );
+    assert!(
+        read(missing_heading)
+            .unwrap_err()
+            .to_string()
+            .contains("missing numeric 'heading'")
+    );
 }

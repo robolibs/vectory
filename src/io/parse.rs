@@ -22,11 +22,15 @@ pub fn read_feature_collection(path: impl AsRef<Path>) -> Result<FeatureCollecti
 
 pub fn parse_geojson(value: Value) -> Result<FeatureCollection> {
     let object = value.as_object().ok_or_else(|| {
-        Error::InvalidGeoJson("vectkit::ReadFeatureCollection(): top-level object has no string 'type' field".into())
+        Error::InvalidGeoJson(
+            "vectkit::ReadFeatureCollection(): top-level object has no string 'type' field".into(),
+        )
     })?;
 
     let ty = object.get("type").and_then(Value::as_str).ok_or_else(|| {
-        Error::InvalidGeoJson("vectkit::ReadFeatureCollection(): top-level object has no string 'type' field".into())
+        Error::InvalidGeoJson(
+            "vectkit::ReadFeatureCollection(): top-level object has no string 'type' field".into(),
+        )
     })?;
 
     match ty {
@@ -34,7 +38,10 @@ pub fn parse_geojson(value: Value) -> Result<FeatureCollection> {
         _ => {
             let mut wrapped = Map::new();
             wrapped.insert("type".into(), Value::String("FeatureCollection".into()));
-            wrapped.insert("features".into(), Value::Array(vec![Value::Object(object.clone())]));
+            wrapped.insert(
+                "features".into(),
+                Value::Array(vec![Value::Object(object.clone())]),
+            );
             parse_feature_collection_object(&wrapped)
         }
     }
@@ -73,9 +80,8 @@ fn parse_feature_collection_object(object: &Map<String, Value>) -> Result<Featur
                 continue;
             }
 
-            let properties = parse_properties(
-                feature_object.get("properties").and_then(Value::as_object),
-            )?;
+            let properties =
+                parse_properties(feature_object.get("properties").and_then(Value::as_object))?;
             for geometry in parse_geometry_value(geometry_value, datum, input_crs)? {
                 output.features.push(Feature {
                     geometry,
@@ -150,8 +156,9 @@ fn parse_properties(properties: Option<&Map<String, Value>>) -> Result<HashMap<S
 fn stringify_json(value: &Value) -> Result<String> {
     match value {
         Value::String(value) => Ok(value.clone()),
-        other => serde_json::to_string(other)
-            .map_err(|err| Error::InvalidGeoJson(format!("failed to serialize property value: {err}"))),
+        other => serde_json::to_string(other).map_err(|err| {
+            Error::InvalidGeoJson(format!("failed to serialize property value: {err}"))
+        }),
     }
 }
 
@@ -245,8 +252,10 @@ fn parse_point(coords: &[Value], datum: Geo, crs: Crs) -> Result<Point3> {
         return Err(Error::InvalidGeoJson("Invalid point coordinates".into()));
     }
 
-    let x = as_f64(&coords[0]).ok_or_else(|| Error::InvalidGeoJson("Invalid point coordinates".into()))?;
-    let y = as_f64(&coords[1]).ok_or_else(|| Error::InvalidGeoJson("Invalid point coordinates".into()))?;
+    let x = as_f64(&coords[0])
+        .ok_or_else(|| Error::InvalidGeoJson("Invalid point coordinates".into()))?;
+    let y = as_f64(&coords[1])
+        .ok_or_else(|| Error::InvalidGeoJson("Invalid point coordinates".into()))?;
     let has_z = coords.len() > 2;
     let z = coords.get(2).and_then(as_f64).unwrap_or(0.0);
 

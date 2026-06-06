@@ -11,7 +11,9 @@ pub fn read_json_str(text: &str) -> crate::Result<crate::FeatureCollection> {
 }
 
 #[allow(non_snake_case)]
-pub fn ReadFeatureCollection(path: impl AsRef<std::path::Path>) -> crate::Result<crate::FeatureCollection> {
+pub fn ReadFeatureCollection(
+    path: impl AsRef<std::path::Path>,
+) -> crate::Result<crate::FeatureCollection> {
     read(path)
 }
 
