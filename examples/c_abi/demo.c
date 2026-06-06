@@ -14,7 +14,7 @@ int main(void) {
       "}]"
       "}";
 
-  VectoryFeatureCollectionHandle* fc = vectory_feature_collection_from_json(json);
+  VectoryFeatureCollection* fc = vectory_feature_collection_from_json(json);
   if (fc == NULL) {
     fprintf(stderr, "from_json failed: %s\n", vectory_last_error_message());
     return 1;
@@ -47,7 +47,7 @@ int main(void) {
       {0.0, 10.0, 0.0},
   };
 
-  VectoryVectorHandle* vector = vectory_vector_new(
+  VectoryVector* vector = vectory_vector_new(
       (VectoryPointArrayView){boundary_points, 4},
       (VectoryGeo3){52.0, 5.0, 0.0},
       (VectoryEuler){0.0, 0.0, 0.0},

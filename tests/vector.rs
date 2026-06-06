@@ -14,7 +14,12 @@ fn square(size: f64) -> Vec<Point3> {
 
 #[test]
 fn vector_basic_construction_and_queries() {
-    let mut vector = Vector::new(square(100.0), Geo::new(52.0, 5.0, 0.0), Heading::default(), Crs::Enu);
+    let mut vector = Vector::new(
+        square(100.0),
+        Geo::new(52.0, 5.0, 0.0),
+        Heading::default(),
+        Crs::Enu,
+    );
     assert_eq!(vector.element_count(), 0);
     assert!(!vector.has_elements());
 
@@ -35,7 +40,12 @@ fn vector_basic_construction_and_queries() {
 
 #[test]
 fn vector_round_trips_to_file() {
-    let mut vector = Vector::new(square(100.0), Geo::new(52.0, 5.0, 0.0), Heading::default(), Crs::Enu);
+    let mut vector = Vector::new(
+        square(100.0),
+        Geo::new(52.0, 5.0, 0.0),
+        Heading::default(),
+        Crs::Enu,
+    );
     vector.set_field_property("name", "Test Field");
     let mut props = HashMap::new();
     props.insert("important".into(), "true".into());

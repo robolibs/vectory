@@ -15,7 +15,10 @@ fn malformed_json_errors() {
 #[test]
 fn missing_or_invalid_top_level_type_errors() {
     let missing = write_temp("vectory_missing_type.geojson", r#"{"features": []}"#);
-    let invalid = write_temp("vectory_invalid_type.geojson", r#"{"type": 123, "features": []}"#);
+    let invalid = write_temp(
+        "vectory_invalid_type.geojson",
+        r#"{"type": 123, "features": []}"#,
+    );
 
     let missing_err = read(missing).unwrap_err().to_string();
     let invalid_err = read(invalid).unwrap_err().to_string();
@@ -65,7 +68,12 @@ fn invalid_point_coordinates_error() {
         }"#,
     );
 
-    assert!(read(path).unwrap_err().to_string().contains("Invalid point coordinates"));
+    assert!(
+        read(path)
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid point coordinates")
+    );
 }
 
 #[test]

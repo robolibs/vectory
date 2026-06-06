@@ -7,6 +7,7 @@
 //! - high-level `Vector` field API
 
 #![deny(unsafe_op_in_unsafe_fn)]
+#![allow(clippy::collapsible_if)]
 
 pub mod core;
 pub mod ffi;

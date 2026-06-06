@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
 use concord::{Geo, Wgs, to_enu};
-use vectory::{
-    Crs, Feature, FeatureCollection, Geometry, Heading, Point3, Segment3, read, write,
-};
+use vectory::{Crs, Feature, FeatureCollection, Geometry, Heading, Point3, Segment3, read, write};
 
 #[test]
 fn writer_round_trips_wgs_and_enu() {

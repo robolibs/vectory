@@ -67,7 +67,10 @@ fn wgs_and_enu_output_round_trip_to_same_internal_point() {
     let wgs_collection = read(&wgs_path).unwrap();
     let enu_collection = read(&enu_path).unwrap();
 
-    match (&wgs_collection.features[0].geometry, &enu_collection.features[0].geometry) {
+    match (
+        &wgs_collection.features[0].geometry,
+        &enu_collection.features[0].geometry,
+    ) {
         (Geometry::Point(a), Geometry::Point(b)) => {
             assert!((a.x - b.x).abs() < 1e-6);
             assert!((a.y - b.y).abs() < 1e-6);

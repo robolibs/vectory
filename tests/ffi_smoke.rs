@@ -4,7 +4,7 @@ use vectory::ffi::{
     VectoryCrs, VectoryEuler, VectoryGeo3, VectoryGeometryKind, VectoryPoint3,
     VectoryPointArrayView, vectory_feature_collection_feature_count,
     vectory_feature_collection_feature_geometry_kind, vectory_feature_collection_feature_point,
-    vectory_feature_collection_from_json, vectory_feature_collection_free,
+    vectory_feature_collection_free, vectory_feature_collection_from_json,
     vectory_feature_collection_to_json, vectory_last_error_message, vectory_string_free,
     vectory_vector_add_point, vectory_vector_element_count, vectory_vector_free,
     vectory_vector_new,
@@ -45,7 +45,9 @@ fn ffi_feature_collection_json_roundtrip() {
         y: 0.0,
         z: 0.0,
     };
-    assert!(vectory_feature_collection_feature_point(handle, 0, &mut point));
+    assert!(vectory_feature_collection_feature_point(
+        handle, 0, &mut point
+    ));
     assert_eq!((point.x, point.y, point.z), (1.0, 2.0, 3.0));
 
     let encoded = vectory_feature_collection_to_json(handle, VectoryCrs::Enu);

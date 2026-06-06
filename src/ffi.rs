@@ -1,3 +1,15 @@
+//! C ABI for vectory.
+//!
+//! Conventions: opaque Box-backed handles (free with the matching
+//! *_free); fallible calls return bool/int with the reason in the
+//! thread-local vectory_last_error_message(); borrowed views are valid
+//! only for the lifetime documented by the handle they came from.
+//!
+//! `include/vectory.h` is generated from this file by cbindgen.
+
+// extern "C" fns take raw pointers from C and deref them by design.
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::{CStr, CString, c_char};
@@ -66,11 +78,11 @@ pub enum VectoryGeometryKind {
     Polygon = 4,
 }
 
-pub struct VectoryFeatureCollectionHandle {
+pub struct VectoryFeatureCollection {
     inner: FeatureCollection,
 }
 
-pub struct VectoryVectorHandle {
+pub struct VectoryVector {
     inner: Vector,
 }
 
@@ -164,7 +176,9 @@ fn fail(message: impl Into<String>) -> bool {
 
 fn cstr_to_str<'a>(value: *const c_char, label: &str) -> crate::Result<&'a str> {
     if value.is_null() {
-        return Err(crate::Error::InvalidGeoJson(format!("null {label} pointer")));
+        return Err(crate::Error::InvalidGeoJson(format!(
+            "null {label} pointer"
+        )));
     }
     let cstr = unsafe { CStr::from_ptr(value) };
     cstr.to_str()
@@ -202,8 +216,8 @@ fn read_points(view: VectoryPointArrayView) -> crate::Result<Vec<Point>> {
 }
 
 fn fc_from_ptr_mut<'a>(
-    handle: *mut VectoryFeatureCollectionHandle,
-) -> crate::Result<&'a mut VectoryFeatureCollectionHandle> {
+    handle: *mut VectoryFeatureCollection,
+) -> crate::Result<&'a mut VectoryFeatureCollection> {
     if handle.is_null() {
         return Err(crate::Error::InvalidGeoJson(
             "null feature collection handle".into(),
@@ -213,8 +227,8 @@ fn fc_from_ptr_mut<'a>(
 }
 
 fn fc_from_ptr<'a>(
-    handle: *const VectoryFeatureCollectionHandle,
-) -> crate::Result<&'a VectoryFeatureCollectionHandle> {
+    handle: *const VectoryFeatureCollection,
+) -> crate::Result<&'a VectoryFeatureCollection> {
     if handle.is_null() {
         return Err(crate::Error::InvalidGeoJson(
             "null feature collection handle".into(),
@@ -223,16 +237,14 @@ fn fc_from_ptr<'a>(
     Ok(unsafe { &*handle })
 }
 
-fn vector_from_ptr_mut<'a>(
-    handle: *mut VectoryVectorHandle,
-) -> crate::Result<&'a mut VectoryVectorHandle> {
+fn vector_from_ptr_mut<'a>(handle: *mut VectoryVector) -> crate::Result<&'a mut VectoryVector> {
     if handle.is_null() {
         return Err(crate::Error::InvalidGeoJson("null vector handle".into()));
     }
     Ok(unsafe { &mut *handle })
 }
 
-fn vector_from_ptr<'a>(handle: *const VectoryVectorHandle) -> crate::Result<&'a VectoryVectorHandle> {
+fn vector_from_ptr<'a>(handle: *const VectoryVector) -> crate::Result<&'a VectoryVector> {
     if handle.is_null() {
         return Err(crate::Error::InvalidGeoJson("null vector handle".into()));
     }
@@ -269,15 +281,15 @@ pub extern "C" fn vectory_string_free(ptr: *mut c_char) {
 pub extern "C" fn vectory_feature_collection_new(
     datum: VectoryGeo3,
     heading: VectoryEuler,
-) -> *mut VectoryFeatureCollectionHandle {
+) -> *mut VectoryFeatureCollection {
     clear_last_error();
-    Box::into_raw(Box::new(VectoryFeatureCollectionHandle {
+    Box::into_raw(Box::new(VectoryFeatureCollection {
         inner: FeatureCollection::new(datum.into(), heading.into()),
     }))
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_feature_collection_free(handle: *mut VectoryFeatureCollectionHandle) {
+pub extern "C" fn vectory_feature_collection_free(handle: *mut VectoryFeatureCollection) {
     if !handle.is_null() {
         unsafe {
             drop(Box::from_raw(handle));
@@ -288,10 +300,10 @@ pub extern "C" fn vectory_feature_collection_free(handle: *mut VectoryFeatureCol
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_read(
     path: *const c_char,
-) -> *mut VectoryFeatureCollectionHandle {
+) -> *mut VectoryFeatureCollection {
     clear_last_error();
     match cstr_to_str(path, "path").and_then(crate::read) {
-        Ok(inner) => Box::into_raw(Box::new(VectoryFeatureCollectionHandle { inner })),
+        Ok(inner) => Box::into_raw(Box::new(VectoryFeatureCollection { inner })),
         Err(err) => {
             set_last_error(err.to_string());
             ptr::null_mut()
@@ -302,10 +314,10 @@ pub extern "C" fn vectory_feature_collection_read(
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_from_json(
     text: *const c_char,
-) -> *mut VectoryFeatureCollectionHandle {
+) -> *mut VectoryFeatureCollection {
     clear_last_error();
     match cstr_to_str(text, "json").and_then(crate::read_json_str) {
-        Ok(inner) => Box::into_raw(Box::new(VectoryFeatureCollectionHandle { inner })),
+        Ok(inner) => Box::into_raw(Box::new(VectoryFeatureCollection { inner })),
         Err(err) => {
             set_last_error(err.to_string());
             ptr::null_mut()
@@ -315,13 +327,14 @@ pub extern "C" fn vectory_feature_collection_from_json(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_write(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     path: *const c_char,
     crs: VectoryCrs,
 ) -> bool {
-    match fc_from_ptr(handle)
-        .and_then(|handle| cstr_to_str(path, "path").and_then(|path| crate::write(&handle.inner, path, crs_from_c(crs))))
-    {
+    match fc_from_ptr(handle).and_then(|handle| {
+        cstr_to_str(path, "path")
+            .and_then(|path| crate::write(&handle.inner, path, crs_from_c(crs)))
+    }) {
         Ok(()) => ok(),
         Err(err) => fail(err.to_string()),
     }
@@ -329,11 +342,13 @@ pub extern "C" fn vectory_feature_collection_write(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_to_json(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     crs: VectoryCrs,
 ) -> *mut c_char {
     clear_last_error();
-    match fc_from_ptr(handle).and_then(|handle| crate::to_json_string(&handle.inner, crs_from_c(crs))) {
+    match fc_from_ptr(handle)
+        .and_then(|handle| crate::to_json_string(&handle.inner, crs_from_c(crs)))
+    {
         Ok(json) => string_to_ptr(json),
         Err(err) => {
             set_last_error(err.to_string());
@@ -344,7 +359,7 @@ pub extern "C" fn vectory_feature_collection_to_json(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_feature_count(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
 ) -> usize {
     fc_from_ptr(handle)
         .map(|handle| handle.inner.features.len())
@@ -353,7 +368,7 @@ pub extern "C" fn vectory_feature_collection_feature_count(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_clear_features(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
 ) -> bool {
     match fc_from_ptr_mut(handle) {
         Ok(handle) => {
@@ -366,7 +381,7 @@ pub extern "C" fn vectory_feature_collection_clear_features(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_get_datum(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     out: *mut VectoryGeo3,
 ) -> bool {
     match fc_from_ptr(handle) {
@@ -377,7 +392,7 @@ pub extern "C" fn vectory_feature_collection_get_datum(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_set_datum(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
     datum: VectoryGeo3,
 ) -> bool {
     match fc_from_ptr_mut(handle) {
@@ -391,7 +406,7 @@ pub extern "C" fn vectory_feature_collection_set_datum(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_get_heading(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     out: *mut VectoryEuler,
 ) -> bool {
     match fc_from_ptr(handle) {
@@ -402,7 +417,7 @@ pub extern "C" fn vectory_feature_collection_get_heading(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_set_heading(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
     heading: VectoryEuler,
 ) -> bool {
     match fc_from_ptr_mut(handle) {
@@ -416,7 +431,7 @@ pub extern "C" fn vectory_feature_collection_set_heading(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_set_global_property(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
     key: *const c_char,
     value: *const c_char,
 ) -> bool {
@@ -437,7 +452,7 @@ pub extern "C" fn vectory_feature_collection_set_global_property(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_get_global_property(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     key: *const c_char,
 ) -> *mut c_char {
     clear_last_error();
@@ -474,7 +489,7 @@ fn feature_properties_from_c(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_add_point_feature(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
     point: VectoryPoint3,
     property_key: *const c_char,
     property_value: *const c_char,
@@ -494,7 +509,7 @@ pub extern "C" fn vectory_feature_collection_add_point_feature(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_add_segment_feature(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
     segment: VectorySegment3,
     property_key: *const c_char,
     property_value: *const c_char,
@@ -514,7 +529,7 @@ pub extern "C" fn vectory_feature_collection_add_segment_feature(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_add_path_feature(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
     points: VectoryPointArrayView,
     property_key: *const c_char,
     property_value: *const c_char,
@@ -522,10 +537,10 @@ pub extern "C" fn vectory_feature_collection_add_path_feature(
     match fc_from_ptr_mut(handle).and_then(|handle| {
         let points = read_points(points)?;
         let properties = feature_properties_from_c(None, property_key, property_value)?;
-        handle.inner.features.push(Feature::new(
-            crate::Geometry::path(points),
-            properties,
-        ));
+        handle
+            .inner
+            .features
+            .push(Feature::new(crate::Geometry::path(points), properties));
         Ok(())
     }) {
         Ok(()) => ok(),
@@ -535,7 +550,7 @@ pub extern "C" fn vectory_feature_collection_add_path_feature(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_add_polygon_feature(
-    handle: *mut VectoryFeatureCollectionHandle,
+    handle: *mut VectoryFeatureCollection,
     points: VectoryPointArrayView,
     property_key: *const c_char,
     property_value: *const c_char,
@@ -543,10 +558,10 @@ pub extern "C" fn vectory_feature_collection_add_polygon_feature(
     match fc_from_ptr_mut(handle).and_then(|handle| {
         let points = read_points(points)?;
         let properties = feature_properties_from_c(None, property_key, property_value)?;
-        handle.inner.features.push(Feature::new(
-            crate::Geometry::polygon(points),
-            properties,
-        ));
+        handle
+            .inner
+            .features
+            .push(Feature::new(crate::Geometry::polygon(points), properties));
         Ok(())
     }) {
         Ok(()) => ok(),
@@ -556,7 +571,7 @@ pub extern "C" fn vectory_feature_collection_add_polygon_feature(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_feature_geometry_kind(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     index: usize,
 ) -> VectoryGeometryKind {
     match fc_from_ptr(handle)
@@ -571,7 +586,7 @@ pub extern "C" fn vectory_feature_collection_feature_geometry_kind(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_feature_property(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     index: usize,
     key: *const c_char,
 ) -> *mut c_char {
@@ -596,7 +611,7 @@ pub extern "C" fn vectory_feature_collection_feature_property(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_feature_point(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     index: usize,
     out: *mut VectoryPoint3,
 ) -> bool {
@@ -609,7 +624,9 @@ pub extern "C" fn vectory_feature_collection_feature_point(
         if let Geometry::Point(point) = feature.geometry {
             Ok(point)
         } else {
-            Err(crate::Error::InvalidGeoJson("feature is not a point".into()))
+            Err(crate::Error::InvalidGeoJson(
+                "feature is not a point".into(),
+            ))
         }
     }) {
         Ok(point) => write_out(out, point.into()),
@@ -619,7 +636,7 @@ pub extern "C" fn vectory_feature_collection_feature_point(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_feature_segment(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     index: usize,
     out: *mut VectorySegment3,
 ) -> bool {
@@ -632,7 +649,9 @@ pub extern "C" fn vectory_feature_collection_feature_segment(
         if let Geometry::Segment(segment) = feature.geometry {
             Ok(segment)
         } else {
-            Err(crate::Error::InvalidGeoJson("feature is not a segment".into()))
+            Err(crate::Error::InvalidGeoJson(
+                "feature is not a segment".into(),
+            ))
         }
     }) {
         Ok(segment) => write_out(out, segment.into()),
@@ -642,7 +661,7 @@ pub extern "C" fn vectory_feature_collection_feature_segment(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_feature_vertex_count(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     index: usize,
 ) -> usize {
     fc_from_ptr(handle)
@@ -658,7 +677,7 @@ pub extern "C" fn vectory_feature_collection_feature_vertex_count(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_feature_collection_feature_vertex_at(
-    handle: *const VectoryFeatureCollectionHandle,
+    handle: *const VectoryFeatureCollection,
     index: usize,
     vertex_index: usize,
     out: *mut VectoryPoint3,
@@ -696,17 +715,12 @@ pub extern "C" fn vectory_vector_new(
     datum: VectoryGeo3,
     heading: VectoryEuler,
     crs: VectoryCrs,
-) -> *mut VectoryVectorHandle {
+) -> *mut VectoryVector {
     clear_last_error();
     match read_points(boundary) {
         Ok(points) => {
-            let inner = Vector::new(
-                points,
-                datum.into(),
-                heading.into(),
-                crs_from_c(crs),
-            );
-            Box::into_raw(Box::new(VectoryVectorHandle { inner }))
+            let inner = Vector::new(points, datum.into(), heading.into(), crs_from_c(crs));
+            Box::into_raw(Box::new(VectoryVector { inner }))
         }
         Err(err) => {
             set_last_error(err.to_string());
@@ -716,10 +730,10 @@ pub extern "C" fn vectory_vector_new(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_from_file(path: *const c_char) -> *mut VectoryVectorHandle {
+pub extern "C" fn vectory_vector_from_file(path: *const c_char) -> *mut VectoryVector {
     clear_last_error();
     match cstr_to_str(path, "path").and_then(Vector::from_file) {
-        Ok(inner) => Box::into_raw(Box::new(VectoryVectorHandle { inner })),
+        Ok(inner) => Box::into_raw(Box::new(VectoryVector { inner })),
         Err(err) => {
             set_last_error(err.to_string());
             ptr::null_mut()
@@ -728,7 +742,7 @@ pub extern "C" fn vectory_vector_from_file(path: *const c_char) -> *mut VectoryV
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_free(handle: *mut VectoryVectorHandle) {
+pub extern "C" fn vectory_vector_free(handle: *mut VectoryVector) {
     if !handle.is_null() {
         unsafe {
             drop(Box::from_raw(handle));
@@ -738,34 +752,34 @@ pub extern "C" fn vectory_vector_free(handle: *mut VectoryVectorHandle) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_to_file(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     path: *const c_char,
     crs: VectoryCrs,
 ) -> bool {
-    match vector_from_ptr(handle)
-        .and_then(|handle| cstr_to_str(path, "path").and_then(|path| handle.inner.to_file(path, crs_from_c(crs))))
-    {
+    match vector_from_ptr(handle).and_then(|handle| {
+        cstr_to_str(path, "path").and_then(|path| handle.inner.to_file(path, crs_from_c(crs)))
+    }) {
         Ok(()) => ok(),
         Err(err) => fail(err.to_string()),
     }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_element_count(handle: *const VectoryVectorHandle) -> usize {
+pub extern "C" fn vectory_vector_element_count(handle: *const VectoryVector) -> usize {
     vector_from_ptr(handle)
         .map(|handle| handle.inner.element_count())
         .unwrap_or(0)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_has_elements(handle: *const VectoryVectorHandle) -> bool {
+pub extern "C" fn vectory_vector_has_elements(handle: *const VectoryVector) -> bool {
     vector_from_ptr(handle)
         .map(|handle| handle.inner.has_elements())
         .unwrap_or(false)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_clear_elements(handle: *mut VectoryVectorHandle) -> bool {
+pub extern "C" fn vectory_vector_clear_elements(handle: *mut VectoryVector) -> bool {
     match vector_from_ptr_mut(handle) {
         Ok(handle) => {
             handle.inner.clear_elements();
@@ -777,7 +791,7 @@ pub extern "C" fn vectory_vector_clear_elements(handle: *mut VectoryVectorHandle
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_get_datum(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     out: *mut VectoryGeo3,
 ) -> bool {
     match vector_from_ptr(handle) {
@@ -787,10 +801,7 @@ pub extern "C" fn vectory_vector_get_datum(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_set_datum(
-    handle: *mut VectoryVectorHandle,
-    datum: VectoryGeo3,
-) -> bool {
+pub extern "C" fn vectory_vector_set_datum(handle: *mut VectoryVector, datum: VectoryGeo3) -> bool {
     match vector_from_ptr_mut(handle) {
         Ok(handle) => {
             handle.inner.set_datum(datum.into());
@@ -802,7 +813,7 @@ pub extern "C" fn vectory_vector_set_datum(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_get_heading(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     out: *mut VectoryEuler,
 ) -> bool {
     match vector_from_ptr(handle) {
@@ -813,7 +824,7 @@ pub extern "C" fn vectory_vector_get_heading(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_set_heading(
-    handle: *mut VectoryVectorHandle,
+    handle: *mut VectoryVector,
     heading: VectoryEuler,
 ) -> bool {
     match vector_from_ptr_mut(handle) {
@@ -827,7 +838,7 @@ pub extern "C" fn vectory_vector_set_heading(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_get_crs(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     out: *mut VectoryCrs,
 ) -> bool {
     match vector_from_ptr(handle) {
@@ -843,10 +854,7 @@ pub extern "C" fn vectory_vector_get_crs(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_set_crs(
-    handle: *mut VectoryVectorHandle,
-    crs: VectoryCrs,
-) -> bool {
+pub extern "C" fn vectory_vector_set_crs(handle: *mut VectoryVector, crs: VectoryCrs) -> bool {
     match vector_from_ptr_mut(handle) {
         Ok(handle) => {
             handle.inner.set_crs(crs_from_c(crs));
@@ -857,7 +865,9 @@ pub extern "C" fn vectory_vector_set_crs(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn vectory_vector_field_boundary_vertex_count(handle: *const VectoryVectorHandle) -> usize {
+pub extern "C" fn vectory_vector_field_boundary_vertex_count(
+    handle: *const VectoryVector,
+) -> usize {
     vector_from_ptr(handle)
         .map(|handle| handle.inner.field_boundary().len())
         .unwrap_or(0)
@@ -865,7 +875,7 @@ pub extern "C" fn vectory_vector_field_boundary_vertex_count(handle: *const Vect
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_field_boundary_vertex_at(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     index: usize,
     out: *mut VectoryPoint3,
 ) -> bool {
@@ -884,7 +894,7 @@ pub extern "C" fn vectory_vector_field_boundary_vertex_at(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_set_global_property(
-    handle: *mut VectoryVectorHandle,
+    handle: *mut VectoryVector,
     key: *const c_char,
     value: *const c_char,
 ) -> bool {
@@ -901,7 +911,7 @@ pub extern "C" fn vectory_vector_set_global_property(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_get_global_property(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     key: *const c_char,
     default_value: *const c_char,
 ) -> *mut c_char {
@@ -925,12 +935,16 @@ pub extern "C" fn vectory_vector_get_global_property(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_add_point(
-    handle: *mut VectoryVectorHandle,
+    handle: *mut VectoryVector,
     point: VectoryPoint3,
     kind: *const c_char,
 ) -> bool {
     match vector_from_ptr_mut(handle).and_then(|handle| {
-        let kind = if kind.is_null() { "" } else { cstr_to_str(kind, "kind")? };
+        let kind = if kind.is_null() {
+            ""
+        } else {
+            cstr_to_str(kind, "kind")?
+        };
         handle.inner.add_point(point.into(), kind, HashMap::new());
         Ok(())
     }) {
@@ -941,12 +955,16 @@ pub extern "C" fn vectory_vector_add_point(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_add_segment(
-    handle: *mut VectoryVectorHandle,
+    handle: *mut VectoryVector,
     segment: VectorySegment3,
     kind: *const c_char,
 ) -> bool {
     match vector_from_ptr_mut(handle).and_then(|handle| {
-        let kind = if kind.is_null() { "" } else { cstr_to_str(kind, "kind")? };
+        let kind = if kind.is_null() {
+            ""
+        } else {
+            cstr_to_str(kind, "kind")?
+        };
         handle.inner.add_line(segment.into(), kind, HashMap::new());
         Ok(())
     }) {
@@ -957,17 +975,19 @@ pub extern "C" fn vectory_vector_add_segment(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_add_path(
-    handle: *mut VectoryVectorHandle,
+    handle: *mut VectoryVector,
     points: VectoryPointArrayView,
     kind: *const c_char,
 ) -> bool {
     match vector_from_ptr_mut(handle).and_then(|handle| {
-        let kind = if kind.is_null() { "" } else { cstr_to_str(kind, "kind")? };
-        handle.inner.add_path(
-            read_points(points)?,
-            kind,
-            HashMap::new(),
-        );
+        let kind = if kind.is_null() {
+            ""
+        } else {
+            cstr_to_str(kind, "kind")?
+        };
+        handle
+            .inner
+            .add_path(read_points(points)?, kind, HashMap::new());
         Ok(())
     }) {
         Ok(()) => ok(),
@@ -977,17 +997,19 @@ pub extern "C" fn vectory_vector_add_path(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_add_polygon(
-    handle: *mut VectoryVectorHandle,
+    handle: *mut VectoryVector,
     points: VectoryPointArrayView,
     kind: *const c_char,
 ) -> bool {
     match vector_from_ptr_mut(handle).and_then(|handle| {
-        let kind = if kind.is_null() { "" } else { cstr_to_str(kind, "kind")? };
-        handle.inner.add_polygon(
-            read_points(points)?,
-            kind,
-            HashMap::new(),
-        );
+        let kind = if kind.is_null() {
+            ""
+        } else {
+            cstr_to_str(kind, "kind")?
+        };
+        handle
+            .inner
+            .add_polygon(read_points(points)?, kind, HashMap::new());
         Ok(())
     }) {
         Ok(()) => ok(),
@@ -997,7 +1019,7 @@ pub extern "C" fn vectory_vector_add_polygon(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_element_kind(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     index: usize,
 ) -> *mut c_char {
     clear_last_error();
@@ -1018,7 +1040,7 @@ pub extern "C" fn vectory_vector_element_kind(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_element_geometry_kind(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     index: usize,
 ) -> VectoryGeometryKind {
     vector_from_ptr(handle)
@@ -1030,7 +1052,7 @@ pub extern "C" fn vectory_vector_element_geometry_kind(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn vectory_vector_element_point(
-    handle: *const VectoryVectorHandle,
+    handle: *const VectoryVector,
     index: usize,
     out: *mut VectoryPoint3,
 ) -> bool {
@@ -1042,7 +1064,9 @@ pub extern "C" fn vectory_vector_element_point(
         if let Geometry::Point(point) = element.geometry {
             Ok(point)
         } else {
-            Err(crate::Error::InvalidGeoJson("element is not a point".into()))
+            Err(crate::Error::InvalidGeoJson(
+                "element is not a point".into(),
+            ))
         }
     }) {
         Ok(point) => write_out(out, point.into()),

@@ -24,10 +24,7 @@ fn geometry_accepts_core_datapod_types() {
     let segment = Segment::new(Point::new(1.0, 2.0, 3.0), Point::new(4.0, 5.0, 6.0));
     assert!(matches!(Geometry::from(segment), Geometry::Segment(_)));
 
-    let path = datapod::Linestring::new(vec![
-        Point::new(1.0, 2.0, 0.0),
-        Point::new(2.0, 3.0, 0.0),
-    ]);
+    let path = datapod::Linestring::new(vec![Point::new(1.0, 2.0, 0.0), Point::new(2.0, 3.0, 0.0)]);
     assert!(matches!(Geometry::from(path), Geometry::Path(_)));
 
     let polygon = Polygon::new(vec![
@@ -46,7 +43,8 @@ fn feature_and_collection_hold_expected_data() {
     assert!(matches!(feature.geometry, Geometry::Point(_)));
     assert_eq!(feature.properties["name"], "test_point");
 
-    let mut collection = FeatureCollection::new(Geo::new(52.0, 5.0, 0.0), Heading::new(0.0, 0.0, 2.0));
+    let mut collection =
+        FeatureCollection::new(Geo::new(52.0, 5.0, 0.0), Heading::new(0.0, 0.0, 2.0));
     collection.features.push(feature);
     collection.features.push(Feature::new(
         Segment::new(Point::new(0.0, 0.0, 0.0), Point::new(1.0, 1.0, 1.0)),
@@ -56,13 +54,20 @@ fn feature_and_collection_hold_expected_data() {
     assert_eq!(collection.datum.latitude, 52.0);
     assert_eq!(collection.heading.yaw, 2.0);
     assert_eq!(collection.features.len(), 2);
-    assert!(matches!(collection.features[0].geometry, Geometry::Point(_)));
-    assert!(matches!(collection.features[1].geometry, Geometry::Segment(_)));
+    assert!(matches!(
+        collection.features[0].geometry,
+        Geometry::Point(_)
+    ));
+    assert!(matches!(
+        collection.features[1].geometry,
+        Geometry::Segment(_)
+    ));
 }
 
 #[test]
 fn feature_collection_display_matches_expected_shape() {
-    let mut collection = FeatureCollection::new(Geo::new(52.0, 5.0, 0.0), Heading::new(0.0, 0.0, 2.0));
+    let mut collection =
+        FeatureCollection::new(Geo::new(52.0, 5.0, 0.0), Heading::new(0.0, 0.0, 2.0));
     collection.features.push(Feature::new(
         Point::new(1.0, 2.0, 3.0),
         HashMap::from([(String::from("name"), String::from("test"))]),

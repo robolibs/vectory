@@ -14,7 +14,11 @@ pub struct Element {
 }
 
 impl Element {
-    pub fn new(geometry: Geometry, properties: HashMap<String, String>, kind: impl Into<String>) -> Self {
+    pub fn new(
+        geometry: Geometry,
+        properties: HashMap<String, String>,
+        kind: impl Into<String>,
+    ) -> Self {
         Self {
             geometry,
             properties,
@@ -61,7 +65,11 @@ impl Vector {
 
         for feature in &collection.features {
             if let Geometry::Polygon(poly) = &feature.geometry {
-                if feature.properties.get("type").is_some_and(|value| value == "field") {
+                if feature
+                    .properties
+                    .get("type")
+                    .is_some_and(|value| value == "field")
+                {
                     field_polygon = Some((poly.vertices.clone(), feature.properties.clone()));
                     break;
                 }
@@ -83,12 +91,20 @@ impl Vector {
             ));
         };
 
-        let mut vector = Self::new(field_boundary, collection.datum, collection.heading, Crs::Enu);
+        let mut vector = Self::new(
+            field_boundary,
+            collection.datum,
+            collection.heading,
+            Crs::Enu,
+        );
         vector.field_properties = field_properties;
         vector.global_properties = collection.global_properties.clone();
 
         for feature in collection.features {
-            let is_explicit_field = feature.properties.get("type").is_some_and(|value| value == "field");
+            let is_explicit_field = feature
+                .properties
+                .get("type")
+                .is_some_and(|value| value == "field");
             if !is_explicit_field {
                 let kind = feature
                     .properties
@@ -259,7 +275,10 @@ impl Vector {
     }
 
     pub fn elements_by_type(&self, kind: &str) -> Vec<&Element> {
-        self.elements.iter().filter(|element| element.kind == kind).collect()
+        self.elements
+            .iter()
+            .filter(|element| element.kind == kind)
+            .collect()
     }
 
     pub fn elements_by_type_cloned(&self, kind: &str) -> Vec<Element> {
@@ -322,7 +341,12 @@ impl Vector {
     pub fn filter_by_property(&self, key: &str, value: &str) -> Vec<&Element> {
         self.elements
             .iter()
-            .filter(|element| element.properties.get(key).is_some_and(|candidate| candidate == value))
+            .filter(|element| {
+                element
+                    .properties
+                    .get(key)
+                    .is_some_and(|candidate| candidate == value)
+            })
             .collect()
     }
 
