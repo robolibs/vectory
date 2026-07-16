@@ -1,6 +1,6 @@
 [package]
 name = "vectory"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "Rust GeoJSON vector library for robotics"
 license = "MIT"
@@ -38,9 +38,9 @@ path = "examples/rerun_vis_from_wgs.rs"
 required-features = ["rerun-viz"]
 
 [dependencies]
-concord = { git = "https://codeberg.org/robolibs/concord.git", tag = "0.1.1" }
-datapod = { git = "https://codeberg.org/robolibs/datapod.git", tag = "0.4.0" }
-graphix = { git = "https://codeberg.org/robolibs/graphix.git", tag = "0.1.1" }
+concord = { git = "https://codeberg.org/robolibs/concord.git", tag = "0.1.2" }
+datapod = { git = "https://codeberg.org/robolibs/datapod.git", tag = "0.4.1" }
+graphix = { git = "https://codeberg.org/robolibs/graphix.git", tag = "0.1.2" }
 geojson = "0.24"
 pyo3 = { version = "0.23", optional = true, features = [
     "abi3-py39",
