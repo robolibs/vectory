@@ -684,8 +684,8 @@ dependencies = [
 
 [[package]]
 name = "concord"
-version = "0.1.1"
-source = "git+https://codeberg.org/robolibs/concord.git?tag=0.1.1#070bb5b19a3d802c8dc48a6f4e0cc0fefcd198af"
+version = "0.1.2"
+source = "git+https://codeberg.org/robolibs/concord.git?tag=0.1.2#a79f2bde3a6a166668332fc458f3ebb357e94dc9"
 dependencies = [
  "datapod",
  "graphix",
@@ -925,8 +925,8 @@ dependencies = [
 
 [[package]]
 name = "datapod"
-version = "0.4.0"
-source = "git+https://codeberg.org/robolibs/datapod.git?tag=0.4.0#e90e11ce9d3e6a2269b4c86b6b1a441b1b6981fe"
+version = "0.4.1"
+source = "git+https://codeberg.org/robolibs/datapod.git?tag=0.4.1#bcf4eb86033ee945d5b5f6a48f6d55a92026c837"
 dependencies = [
  "bytemuck",
  "datapod-macros",
@@ -935,7 +935,7 @@ dependencies = [
 [[package]]
 name = "datapod-macros"
 version = "0.0.1"
-source = "git+https://codeberg.org/robolibs/datapod.git?tag=0.4.0#e90e11ce9d3e6a2269b4c86b6b1a441b1b6981fe"
+source = "git+https://codeberg.org/robolibs/datapod.git?tag=0.4.1#bcf4eb86033ee945d5b5f6a48f6d55a92026c837"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1399,8 +1399,8 @@ checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 
 [[package]]
 name = "graphix"
-version = "0.1.1"
-source = "git+https://codeberg.org/robolibs/graphix.git?tag=0.1.1#bc9e51107ef2c63e91eb497257eeea8adc8dd2b6"
+version = "0.1.2"
+source = "git+https://codeberg.org/robolibs/graphix.git?tag=0.1.2#e9fb475e268af76d4fb2ae54833ea7ea7add9463"
 dependencies = [
  "datapod",
  "glam",
@@ -4809,7 +4809,7 @@ dependencies = [
 
 [[package]]
 name = "vectory"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "concord",
  "datapod",
