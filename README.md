@@ -249,7 +249,6 @@ on the machine.
 - [src/vector.rs](src/vector.rs): field-oriented API
 - [src/ffi.rs](src/ffi.rs): C ABI
 - [src/python/mod.rs](src/python/mod.rs): Python bindings
-- [PLAN.md](PLAN.md): original porting plan
 
 ## Status
 

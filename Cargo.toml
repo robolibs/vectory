@@ -29,12 +29,12 @@ rerun-viz = ["dep:rerun"]
 
 [[example]]
 name = "rerun_vis_from_enu"
-path = "examples/rerun_vis_from_enu.rs"
+path = "examples/rust/rerun_vis_from_enu.rs"
 required-features = ["rerun-viz"]
 
 [[example]]
 name = "rerun_vis_from_wgs"
-path = "examples/rerun_vis_from_wgs.rs"
+path = "examples/rust/rerun_vis_from_wgs.rs"
 required-features = ["rerun-viz"]
 
 [dependencies]
@@ -52,3 +52,23 @@ serde_json = "1.0"
 thiserror = "2.0"
 
 [dev-dependencies]
+
+[[example]]
+name = "crs_conversion_example"
+path = "examples/rust/crs_conversion_example.rs"
+
+[[example]]
+name = "json_roundtrip"
+path = "examples/rust/json_roundtrip.rs"
+
+[[example]]
+name = "main"
+path = "examples/rust/main.rs"
+
+[[example]]
+name = "read_write"
+path = "examples/rust/read_write.rs"
+
+[[example]]
+name = "vector_workflow"
+path = "examples/rust/vector_workflow.rs"
